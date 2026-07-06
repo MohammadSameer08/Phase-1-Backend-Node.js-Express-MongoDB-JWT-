@@ -19,4 +19,8 @@ app.get("/", (req, res) => {
   res.send("Hello, Sameer! Welcome to the User Authentication API.");
 });
 
+import authRoutes from "./routes/auth.routes.js";
+// Use the authentication routes for any requests starting with /api/auth
+app.use("/api/auth", authRoutes);
+
 export default app;

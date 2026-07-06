@@ -1,15 +1,14 @@
 import express from "express";
 import dotenv from "dotenv";
+import app from "./app.js";
 
+// Load environment variables from the .env file
 dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+// Get the port from environment variables or use a default value
+const PORT = process.env.PORT || 8000;
 
-app.get("/", (req, res) => {
-  res.send("Hello, World!");
-});
-
+// Start the server and listen on the specified port
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

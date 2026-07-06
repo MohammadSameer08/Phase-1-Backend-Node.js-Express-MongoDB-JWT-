@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/MohammadSameer08/Phase-1-Backend-Node.js-Express-MongoDB-JWT-#readme",
   "dependencies": {
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "nodemon": "^3.1.14"

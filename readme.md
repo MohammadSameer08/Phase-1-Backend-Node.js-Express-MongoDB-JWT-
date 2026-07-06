@@ -1,0 +1,1 @@
+# Phase 1 — Backend (Node.js, Express, MongoDB, JWT)

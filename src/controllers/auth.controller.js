@@ -1,7 +1,7 @@
-// @ts-nocheck
 import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
+// @ts-ignore
 export const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
   try {
@@ -14,6 +14,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
+// @ts-ignore
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {

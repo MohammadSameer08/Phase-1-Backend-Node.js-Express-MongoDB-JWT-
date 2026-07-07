@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+// @ts-nocheck
 import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 

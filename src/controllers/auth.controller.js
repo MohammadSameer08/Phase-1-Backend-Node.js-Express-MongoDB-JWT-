@@ -1,3 +1,4 @@
+// @ts-nocheck
 import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
@@ -7,8 +8,13 @@ export const registerUser = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password before saving
     const user = new User({ username, email, password: hashedPassword });
+    // @ts-ignore
+    const accessToken = await user.generateAccessToken(); // Generate JWT token
     await user.save();
-    res.status(201).json({ message: "User registered successfully" });
+    res
+      .status(201)
+      .cookie("token", accessToken, { httpOnly: true })
+      .json({ message: "User registered successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error registering user", error });
   }
@@ -27,8 +33,24 @@ export const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password" });
     }
-    res.status(200).json({ message: "User logged in successfully" });
+    const accessToken = await user.generateAccessToken(); // Generate JWT token
+    res
+      .status(200)
+      .cookie("token", accessToken, { httpOnly: true })
+      .json({ message: "User logged in successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error logging in user", error });
+  }
+};
+
+// @ts-ignore
+export const getCurrentUser = async (req, res) => {
+  try {
+    // Assuming you have a way to get the current user's ID from the request (e.g., from a token)
+    return res
+      .status(200)
+      .json({ user: req.user, message: "Current user fetched successfully" }); // req.user should be set by authentication middleware
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching current user", error });
   }
 };

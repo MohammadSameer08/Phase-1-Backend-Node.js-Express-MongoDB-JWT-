@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 // Create an instance of the Express application
 const app = express();
@@ -10,6 +11,8 @@ app.use(
     origin: "http://localhost:3000", // Replace with your frontend URL
   }),
 );
+
+app.use(cookieParser()); // Middleware to parse cookies
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());

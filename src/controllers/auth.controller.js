@@ -95,3 +95,20 @@ export const updatePassword = async (req, res) => {
     res.status(500).json({ message: "Error updating password", error });
   }
 };
+
+// @ts-ignore
+export const updateProfile = async (req, res) => {
+   const { username } = req.body;
+  try {
+    const user = req.user; // Assuming req.user is set by the authentication middleware
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.username = username || user.username;
+    await user.save();
+    res.status(200).json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Error updating profile", error });
+  }
+}

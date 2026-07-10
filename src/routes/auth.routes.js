@@ -2,13 +2,12 @@ import { Router } from "express";
 import {
   registerUser,
   updatePassword,
+  loginUser,
+  getCurrentUser,
+  logoutUser,
+  updateProfile
 } from "../controllers/auth.controller.js";
-import { loginUser } from "../controllers/auth.controller.js";
-import { getCurrentUser } from "../controllers/auth.controller.js";
-import { logoutUser } from "../controllers/auth.controller.js";
-import {
-  authenticateUser,
-} from "../middleware/auth.middleware.js";
+import { authenticateUser } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
@@ -18,5 +17,6 @@ router.route("/login").post(loginUser);
 router.route("/logout").post(logoutUser);
 router.route("/me").get(authenticateUser, getCurrentUser);
 router.route("/update-password").patch(authenticateUser, updatePassword);
+router.route("/profile").patch(authenticateUser, updateProfile);
 
 export default router;

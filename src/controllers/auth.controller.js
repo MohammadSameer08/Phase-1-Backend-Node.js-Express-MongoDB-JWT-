@@ -64,3 +64,34 @@ export const logoutUser = async (req, res) => {
     res.status(500).json({ message: "Error logging out user", error });
   }
 };
+
+// @ts-ignore
+export const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    // Refetch the user with password field included
+    // The password field is marked as select: false in the User model,
+    // so it's not included in req.user from the auth middleware.
+    // We must explicitly select it using .select("+password") for bcrypt.compare() to work
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    // Compare the provided current password with the stored hashed password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid current password" });
+    }
+    // Hash the new password before saving
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ message: "Error updating password", error });
+  }
+};

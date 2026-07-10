@@ -1,4 +1,3 @@
-// @ts-nocheck
 import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
@@ -22,12 +21,6 @@ export const registerUser = async (req, res) => {
 
 // @ts-ignore
 export const loginUser = async (req, res) => {
-  // Check if the user is already logged in using jwt cookies
-  if (req.user) {
-    return res
-      .status(200)
-      .json({ message: "User already logged in", user: req.user });
-  }
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email }).select("+password");
@@ -39,11 +32,12 @@ export const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password" });
     }
+    // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
     res
       .status(200)
       .cookie("token", accessToken, { httpOnly: true })
-      .json({ message: "User logged in successfully" });
+      .json({ message: "User logged in successfully", user });
   } catch (error) {
     res.status(500).json({ message: "Error logging in user", error });
   }
@@ -58,5 +52,15 @@ export const getCurrentUser = async (req, res) => {
       .json({ user: req.user, message: "Current user fetched successfully" }); // req.user should be set by authentication middleware
   } catch (error) {
     res.status(500).json({ message: "Error fetching current user", error });
+  }
+};
+
+// @ts-ignore
+export const logoutUser = async (req, res) => {
+  try {
+    res.clearCookie("token"); // Clear the token cookie
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error logging out user", error });
   }
 };

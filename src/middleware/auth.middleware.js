@@ -4,7 +4,7 @@ import User from "../models/User.js";
 // Middleware to authenticate user using JWT
 // @ts-ignore
 export const authenticateUser = async (req, res, next) => {
-  const token = req.cookies.token; // Assuming the token is stored in cookies
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1]; // Assuming the token is stored in cookies or Authorization header
   if (!token) {
     return res.status(401).json({ message: "Unauthorized" });
   }

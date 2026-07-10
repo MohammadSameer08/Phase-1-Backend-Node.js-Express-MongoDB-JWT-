@@ -22,6 +22,12 @@ export const registerUser = async (req, res) => {
 
 // @ts-ignore
 export const loginUser = async (req, res) => {
+  // Check if the user is already logged in using jwt cookies
+  if (req.user) {
+    return res
+      .status(200)
+      .json({ message: "User already logged in", user: req.user });
+  }
   const { email, password } = req.body;
   try {
     const user = await User.findOne({ email }).select("+password");

@@ -26,4 +26,8 @@ import authRoutes from "./routes/auth.routes.js";
 // Use the authentication routes for any requests starting with /api/auth
 app.use("/api/auth", authRoutes);
 
+import noteRoutes from "./routes/note.route.js";
+// Use the note routes for any requests starting with /api/notes
+app.use("/api/notes", noteRoutes);
+
 export default app;

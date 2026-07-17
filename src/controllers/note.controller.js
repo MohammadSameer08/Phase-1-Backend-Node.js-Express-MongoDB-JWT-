@@ -45,3 +45,61 @@ export const getNotes = async (req, res) => {
     res.status(500).json({ message: "Error retrieving notes", error });
   }
 };
+
+// @ts-ignore
+export const getNoteById = async (req, res) => {
+  try {
+    const noteId = req.params.id;
+    const userId = req.user._id; // Assuming the user ID is available in req.user
+
+    const note = await Notes.findOne({ _id: noteId, user: userId }).populate(
+      "user",
+      "username email",
+    );
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+    res.status(200).json({ message: "Note retrieved successfully", note });
+  } catch (error) {
+    res.status(500).json({ message: "Error retrieving note", error });
+  }
+};
+
+// @ts-ignore
+export const updateNote = async (req, res) => {
+  try {
+    const noteId = req.params.id;
+    const userId = req.user._id; // Assuming the user ID is available in req.user
+    const { title, content, tags, isPinned } = req.body;
+    const note = await Notes.findOne({ _id: noteId, user: userId }).populate(
+      "user",
+      "username email",
+    );
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+    note.title = title || note.title;
+    note.content = content || note.content;
+    note.tags = tags || note.tags;
+    note.isPinned = isPinned !== undefined ? isPinned : note.isPinned;
+    await note.save();
+    res.status(200).json({ message: "Note updated successfully", note });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating note", error });
+  }
+};
+
+// @ts-ignore
+export const deleteNote = async (req, res) => {
+  try {
+    const noteId = req.params.id;
+    const userId = req.user._id; // Assuming the user ID is available in req.user
+    const note = await Notes.findOneAndDelete({ _id: noteId, user: userId });
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+    res.status(200).json({ message: "Note deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting note", error });
+  }
+};

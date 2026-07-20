@@ -26,6 +26,26 @@ export const getNotes = async (req, res) => {
   try {
     const userId = req.user._id; // Assuming the user ID is available in req.user
 
+    // Get pagination parameters from query
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    console.log(
+      `Fetching notes for user: ${userId}, page: ${page}, limit: ${limit}`,
+    );
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1) {
+      return res
+        .status(400)
+        .json({ message: "Page and limit must be positive integers" });
+    }
+
+    // Calculate skip value
+    const skip = (page - 1) * limit;
+
+    // Get total count of notes for this user
+    const total = await Notes.countDocuments({ user: userId });
+
     // Step 1: Find all notes where the 'user' field matches the userId
     // Without populate, the user field would just return the user ID (ObjectId)
     //
@@ -36,11 +56,26 @@ export const getNotes = async (req, res) => {
     //
     // Result: Instead of { user: "user456" }, you get { user: { _id: "user456", username: "john_doe", email: "john@example.com" } }
 
-    const notes = await Notes.find({ user: userId }).populate(
-      "user",
-      "username email",
-    );
-    res.status(200).json({ message: "Notes retrieved successfully", notes });
+    const notes = await Notes.find({ user: userId })
+      .populate("user", "username email")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.status(200).json({
+      message: "Notes retrieved successfully",
+      notes,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Error retrieving notes", error });
   }

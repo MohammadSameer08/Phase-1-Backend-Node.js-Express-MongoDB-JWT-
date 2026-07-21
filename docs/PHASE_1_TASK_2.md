@@ -5,6 +5,68 @@ Phase 1 Task 2 focuses on building a comprehensive notes management system using
 
 ---
 
+## Pagination Implementation
+
+### Overview
+The Notes API implements **offset-based pagination** to efficiently handle large datasets. Pagination allows clients to retrieve notes in manageable chunks rather than fetching all notes at once.
+
+### How It Works
+1. **Page Number**: Client specifies which page of results to retrieve (starts at 1)
+2. **Limit**: Client specifies how many items per page (default: 10)
+3. **Skip Calculation**: Server calculates `skip = (page - 1) * limit`
+4. **Query Execution**: MongoDB skips the calculated number of documents and returns the limited result set
+5. **Metadata**: Response includes pagination info for client-side navigation
+
+### Pagination Formula
+```
+skip = (page - 1) * limit
+totalPages = Math.ceil(total / limit)
+hasNextPage = page < totalPages
+hasPrevPage = page > 1
+```
+
+### Default Values
+- `page`: 1 (first page)
+- `limit`: 10 (10 items per page)
+
+### Validation
+- Both `page` and `limit` must be positive integers (≥ 1)
+- Non-positive values will return a 400 Bad Request error
+
+### Response Metadata
+Every paginated endpoint includes a `pagination` object with:
+- `total`: Total number of notes for the user
+- `page`: Current page number
+- `limit`: Items per page
+- `totalPages`: Total number of available pages
+- `hasNextPage`: Boolean indicating if more pages exist
+- `hasPrevPage`: Boolean indicating if previous pages exist
+
+### Frontend Integration Example
+```javascript
+// Fetch page 2 with 15 items per page
+async function fetchNotesPage(page = 1, limit = 10) {
+  const response = await fetch(`/api/notes?page=${page}&limit=${limit}`, {
+    method: 'GET',
+    credentials: 'include'
+  });
+  const data = await response.json();
+  
+  console.log(`Showing ${data.notes.length} of ${data.pagination.total} notes`);
+  console.log(`Page ${data.pagination.page} of ${data.pagination.totalPages}`);
+  
+  // Use hasNextPage and hasPrevPage for pagination UI
+  if (data.pagination.hasNextPage) {
+    // Show "Next" button
+  }
+  if (data.pagination.hasPrevPage) {
+    // Show "Previous" button
+  }
+}
+```
+
+---
+
 ## API Endpoints
 
 ### 1. Create Note
@@ -54,9 +116,17 @@ Phase 1 Task 2 focuses on building a comprehensive notes management system using
 ### 2. Get All Notes
 **Endpoint:** `GET /api/notes`
 
-**Description:** Retrieves all notes belonging to the authenticated user with user details populated.
+**Description:** Retrieves all notes belonging to the authenticated user with user details populated. Supports pagination for efficient data retrieval.
 
 **Authentication:** Required (JWT token in cookie or Authorization header)
+
+**Query Parameters:**
+- `page` (integer, optional): Page number for pagination. Defaults to `1` if not provided.
+- `limit` (integer, optional): Number of notes per page. Defaults to `10` if not provided.
+
+**Pagination Rules:**
+- Both `page` and `limit` must be positive integers (≥ 1)
+- Invalid pagination parameters return a 400 error
 
 **Response (Success - 200):**
 ```json
@@ -77,7 +147,22 @@ Phase 1 Task 2 focuses on building a comprehensive notes management system using
       "createdAt": "2024-01-15T10:30:00Z",
       "updatedAt": "2024-01-15T10:30:00Z"
     }
-  ]
+  ],
+  "pagination": {
+    "total": 25,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 3,
+    "hasNextPage": true,
+    "hasPrevPage": false
+  }
+}
+```
+
+**Response (Bad Request - 400):**
+```json
+{
+  "message": "Page and limit must be positive integers"
 }
 ```
 
@@ -88,10 +173,30 @@ Phase 1 Task 2 focuses on building a comprehensive notes management system using
 }
 ```
 
+**Usage Examples:**
+
+1. **Fetch first page with default settings:**
+   ```
+   GET /api/notes
+   ```
+
+2. **Fetch second page with 15 items per page:**
+   ```
+   GET /api/notes?page=2&limit=15
+   ```
+
+3. **Fetch third page with 5 items per page:**
+   ```
+   GET /api/notes?page=3&limit=5
+   ```
+
 **Technical Notes:**
 - Uses MongoDB `.populate()` to replace the user ID with full user object containing only `username` and `email` fields
 - This improves performance by not fetching unnecessary fields like passwords
 - Returns only notes belonging to the authenticated user
+- Notes are sorted by `createdAt` in descending order (newest first)
+- Pagination metadata (`total`, `page`, `limit`, `totalPages`, `hasNextPage`, `hasPrevPage`) is included in every successful response
+- Uses MongoDB `.skip()` to exclude documents from the beginning and `.limit()` to specify the number of documents returned
 
 ---
 

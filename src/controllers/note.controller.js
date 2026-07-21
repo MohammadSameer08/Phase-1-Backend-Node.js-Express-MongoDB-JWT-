@@ -29,6 +29,9 @@ export const getNotes = async (req, res) => {
     // Get pagination parameters from query
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
+
+    const searchQuery = req.query.search; // Get search query from request, default to empty string
+
     console.log(
       `Fetching notes for user: ${userId}, page: ${page}, limit: ${limit}`,
     );
@@ -56,13 +59,27 @@ export const getNotes = async (req, res) => {
     //
     // Result: Instead of { user: "user456" }, you get { user: { _id: "user456", username: "john_doe", email: "john@example.com" } }
 
-    const notes = await Notes.find({ user: userId })
+    const notes = await Notes.find({
+      user: userId,
+      $or: [
+        { title: { $regex: searchQuery || "", $options: "i" } },
+        { content: { $regex: searchQuery || "", $options: "i" } },
+      ],
+    })
       .populate("user", "username email")
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
     const totalPages = Math.ceil(total / limit);
+    // let filteredNotes = notes;
+    // if (searchQuery) {
+    //   filteredNotes = notes.filter(
+    //     (note) =>
+    //       note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       note.content.toLowerCase().includes(searchQuery.toLowerCase()),
+    //   );
+    // }
 
     res.status(200).json({
       message: "Notes retrieved successfully",

@@ -30,7 +30,15 @@ export const getNotes = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    const searchQuery = req.query.search; // Get search query from request, default to empty string
+    // Get search query from request, default to empty string
+    const searchQuery = req.query.search;
+
+    // Default to descending order -createdAt means in mongodb -1 means descending order (newest first).
+    const sort = req.query.sort || "-createdAt";
+    let sortValue = -1;
+    if (sort === "createdAt") {
+      sortValue = 1;
+    }
 
     console.log(
       `Fetching notes for user: ${userId}, page: ${page}, limit: ${limit}`,
@@ -69,7 +77,8 @@ export const getNotes = async (req, res) => {
       .populate("user", "username email")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      // @ts-ignore
+      .sort({ createdAt: sortValue });
 
     const totalPages = Math.ceil(total / limit);
     // let filteredNotes = notes;

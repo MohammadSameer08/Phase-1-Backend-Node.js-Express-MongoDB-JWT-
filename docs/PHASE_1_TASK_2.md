@@ -123,6 +123,9 @@ async function fetchNotesPage(page = 1, limit = 10) {
 **Query Parameters:**
 - `page` (integer, optional): Page number for pagination. Defaults to `1` if not provided.
 - `limit` (integer, optional): Number of notes per page. Defaults to `10` if not provided.
+- `search` (string, optional): Search query to filter notes by title or content (case-insensitive). Uses MongoDB regex for partial matching.
+- `isPinned` (boolean, optional): Filter notes by pin status. Values: `true` (pinned only), `false` (unpinned only). Omit to get all notes regardless of pin status.
+- `sort` (string, optional): Sort order. Values: `-createdAt` (newest first, default), `createdAt` (oldest first).
 
 **Pagination Rules:**
 - Both `page` and `limit` must be positive integers (≥ 1)
@@ -190,13 +193,46 @@ async function fetchNotesPage(page = 1, limit = 10) {
    GET /api/notes?page=3&limit=5
    ```
 
+4. **Search notes containing "mongodb":**
+   ```
+   GET /api/notes?search=mongodb
+   ```
+
+5. **Get only pinned notes:**
+   ```
+   GET /api/notes?isPinned=true
+   ```
+
+6. **Get only unpinned notes:**
+   ```
+   GET /api/notes?isPinned=false
+   ```
+
+7. **Combined: Get pinned notes with "work" in title/content, page 2:**
+   ```
+   GET /api/notes?isPinned=true&search=work&page=2&limit=10
+   ```
+
+8. **Sort by oldest first:**
+   ```
+   GET /api/notes?sort=createdAt
+   ```
+
 **Technical Notes:**
 - Uses MongoDB `.populate()` to replace the user ID with full user object containing only `username` and `email` fields
 - This improves performance by not fetching unnecessary fields like passwords
 - Returns only notes belonging to the authenticated user
-- Notes are sorted by `createdAt` in descending order (newest first)
+- Notes are sorted by `createdAt` in descending order (newest first) by default
 - Pagination metadata (`total`, `page`, `limit`, `totalPages`, `hasNextPage`, `hasPrevPage`) is included in every successful response
 - Uses MongoDB `.skip()` to exclude documents from the beginning and `.limit()` to specify the number of documents returned
+- **Search Filter**: Uses MongoDB `$regex` operator with `$or` to match search query in both `title` and `content` fields (case-insensitive)
+  - Returns notes where title OR content contains the search string
+  - Search is case-insensitive (`$options: "i"`)
+- **isPinned Filter**: Filters notes by their pin status
+  - When `isPinned=true`, returns only pinned notes
+  - When `isPinned=false`, returns only unpinned notes
+  - When parameter is omitted, returns all notes regardless of pin status
+- Filters can be combined: search + isPinned + pagination all work together
 
 ---
 
@@ -387,6 +423,36 @@ curl -X POST http://localhost:3000/api/notes \
 **Get All Notes:**
 ```bash
 curl -X GET http://localhost:3000/api/notes \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Get All Notes with Pagination (page 2, 15 items per page):**
+```bash
+curl -X GET "http://localhost:3000/api/notes?page=2&limit=15" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Search Notes (search for "mongodb"):**
+```bash
+curl -X GET "http://localhost:3000/api/notes?search=mongodb" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Get Only Pinned Notes:**
+```bash
+curl -X GET "http://localhost:3000/api/notes?isPinned=true" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Get Only Unpinned Notes:**
+```bash
+curl -X GET "http://localhost:3000/api/notes?isPinned=false" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Combined: Get Pinned Notes with "work" in title/content, page 2:**
+```bash
+curl -X GET "http://localhost:3000/api/notes?isPinned=true&search=work&page=2&limit=10" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

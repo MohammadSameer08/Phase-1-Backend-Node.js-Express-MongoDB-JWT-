@@ -3,10 +3,10 @@ import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
 // @ts-ignore
 export const registerUser = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password before saving
-    const user = new User({ username, email, password: hashedPassword });
+    const user = new User({ username, email, password: hashedPassword, role });
     // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
     await user.save();
@@ -98,7 +98,7 @@ export const updatePassword = async (req, res) => {
 
 // @ts-ignore
 export const updateProfile = async (req, res) => {
-   const { username } = req.body;
+  const { username } = req.body;
   try {
     const user = req.user; // Assuming req.user is set by the authentication middleware
     if (!user) {
@@ -111,4 +111,16 @@ export const updateProfile = async (req, res) => {
     console.error("Error updating profile:", error);
     res.status(500).json({ message: "Error updating profile", error });
   }
-}
+};
+
+// @ts-ignore
+export const deleteUserById = async (req, res) => {
+  try {
+    const userId = req.params.id; // Get the user ID from the request parameters
+    await User.findByIdAndDelete(userId);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Error deleting user", error });
+  }
+};

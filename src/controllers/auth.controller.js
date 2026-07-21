@@ -2,11 +2,12 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 
 // @ts-ignore
+// Self-registration endpoint - Always creates an employee
 export const registerUser = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10); // Hash the password before saving
-    const user = new User({ username, email, password: hashedPassword, role });
+    const user = new User({ username, email, password: hashedPassword }); // role defaults to "employee"
     // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
     await user.save();
@@ -114,9 +115,9 @@ export const updateProfile = async (req, res) => {
 };
 
 // @ts-ignore
-export const deleteUserById = async (req, res) => {
+export const deleteMe = async (req, res) => {
   try {
-    const userId = req.params.id; // Get the user ID from the request parameters
+    const userId = req.user._id; // Get the user ID from the request parameters
     await User.findByIdAndDelete(userId);
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {

@@ -23,10 +23,15 @@ app.get("/", (req, res) => {
 });
 
 import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import noteRoutes from "./routes/note.route.js";
+
 // Use the authentication routes for any requests starting with /api/auth
 app.use("/api/auth", authRoutes);
 
-import noteRoutes from "./routes/note.route.js";
+// Use the user management routes for any requests starting with /api
+app.use("/api", userRoutes);
+
 // Use the note routes for any requests starting with /api/notes
 app.use("/api/notes", noteRoutes);
 

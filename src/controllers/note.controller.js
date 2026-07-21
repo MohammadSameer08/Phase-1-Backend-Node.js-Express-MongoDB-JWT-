@@ -33,6 +33,13 @@ export const getNotes = async (req, res) => {
     // Get search query from request, default to empty string
     const searchQuery = req.query.search;
 
+    const isPinned =
+      req.query.isPinned === "true"
+        ? true
+        : req.query.isPinned === "false"
+          ? false
+          : undefined;
+
     // Default to descending order -createdAt means in mongodb -1 means descending order (newest first).
     const sort = req.query.sort || "-createdAt";
     let sortValue = -1;
@@ -54,9 +61,6 @@ export const getNotes = async (req, res) => {
     // Calculate skip value
     const skip = (page - 1) * limit;
 
-    // Get total count of notes for this user
-    const total = await Notes.countDocuments({ user: userId });
-
     // Step 1: Find all notes where the 'user' field matches the userId
     // Without populate, the user field would just return the user ID (ObjectId)
     //
@@ -67,13 +71,31 @@ export const getNotes = async (req, res) => {
     //
     // Result: Instead of { user: "user456" }, you get { user: { _id: "user456", username: "john_doe", email: "john@example.com" } }
 
-    const notes = await Notes.find({
+    // Build query object
+    // @ts-ignore
+    const query = {
       user: userId,
-      $or: [
-        { title: { $regex: searchQuery || "", $options: "i" } },
-        { content: { $regex: searchQuery || "", $options: "i" } },
-      ],
-    })
+    };
+
+    // Add search filter if search query exists
+    if (searchQuery) {
+      // @ts-ignore
+      query.$or = [
+        { title: { $regex: searchQuery, $options: "i" } },
+        { content: { $regex: searchQuery, $options: "i" } },
+      ];
+    }
+
+    // Add isPinned filter independently (not as part of $or)
+    if (isPinned !== undefined) {
+      // @ts-ignore
+      query.isPinned = isPinned;
+    }
+
+    // Recalculate total with the new query filter
+    const total = await Notes.countDocuments(query);
+
+    const notes = await Notes.find(query)
       .populate("user", "username email")
       .skip(skip)
       .limit(limit)

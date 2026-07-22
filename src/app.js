@@ -14,6 +14,9 @@ app.use(
 
 app.use(cookieParser()); // Middleware to parse cookies
 
+// Middleware to serve static files from uploads directory
+app.use("/uploads", express.static("uploads"));
+
 // Middleware to parse incoming JSON requests
 app.use(express.json());
 
@@ -24,7 +27,8 @@ app.get("/", (req, res) => {
 
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
-import noteRoutes from "./routes/note.route.js";
+import noteRoutes from "./routes/note.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 
 // Use the authentication routes for any requests starting with /api/auth
 app.use("/api/auth", authRoutes);
@@ -34,5 +38,8 @@ app.use("/api", userRoutes);
 
 // Use the note routes for any requests starting with /api/notes
 app.use("/api/notes", noteRoutes);
+
+// Use the profile routes for any requests starting with /api/profile
+app.use("/api/profile", profileRoutes);
 
 export default app;

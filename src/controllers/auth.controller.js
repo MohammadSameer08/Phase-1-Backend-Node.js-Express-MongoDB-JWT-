@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
+import { AppError } from "../utils/appError.js";
 
 // @ts-ignore
 // Self-registration endpoint - Always creates an employee
@@ -29,12 +30,12 @@ export const loginUser = async (req, res) => {
   try {
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
     // Add password verification logic here
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid password" });
+      throw new AppError("Invalid password", 401);
     }
     // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
@@ -83,7 +84,7 @@ export const updatePassword = async (req, res) => {
     // We must explicitly select it using .select("+password") for bcrypt.compare() to work
     const user = await User.findById(req.user._id).select("+password");
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
     // Compare the provided current password with the stored hashed password
     const isPasswordValid = await bcrypt.compare(
@@ -91,7 +92,7 @@ export const updatePassword = async (req, res) => {
       user.password,
     );
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Invalid current password" });
+      throw new AppError("Invalid current password", 401);
     }
     // Hash the new password before saving
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -110,7 +111,7 @@ export const updateProfile = async (req, res) => {
   try {
     const user = req.user; // Assuming req.user is set by the authentication middleware
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
     user.username = username || user.username;
     await user.save();
@@ -139,14 +140,12 @@ export const forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      throw new AppError("User not found", 404);
     }
     // @ts-ignore
     const resetToken = user.generatePasswordResetToken();
     if (!resetToken) {
-      return res
-        .status(500)
-        .json({ message: "Failed to generate reset token" });
+      throw new AppError("Failed to generate reset token", 500);
     }
     user.passwordResetToken = resetToken;
     user.passwordResetExpires = new Date(Date.now() + 3600000); // Token expires in 1 hour
@@ -178,16 +177,14 @@ export const resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({ passwordResetToken: token });
     if (!user) {
-      return res
-        .status(404)
-        .json({ message: "Invalid or expired reset token" });
+      throw new AppError("Invalid or expired reset token", 404);
     }
     // Check if the token has expired
     if (
       user.passwordResetExpires &&
       user.passwordResetExpires.getTime() < Date.now()
     ) {
-      return res.status(400).json({ message: "Reset token has expired" });
+      throw new AppError("Reset token has expired", 400);
     }
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -207,12 +204,12 @@ export const resetPassword = async (req, res) => {
 export const refreshTokens = async (req, res) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
-    return res.status(400).json({ message: "Refresh token is required" });
+    throw new AppError("Refresh token is required", 400);
   }
   try {
     const user = await User.findOne({ refreshToken });
     if (!user) {
-      return res.status(401).json({ message: "Invalid refresh token" });
+      throw new AppError("Invalid refresh token", 401);
     }
     // @ts-ignore
     const newAccessToken = await user.generateAccessToken();

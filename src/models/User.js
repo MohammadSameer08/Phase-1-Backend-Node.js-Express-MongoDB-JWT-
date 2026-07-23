@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 // Define the User schema
 
@@ -29,6 +30,15 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
@@ -38,6 +48,12 @@ userSchema.methods.generateAccessToken = function () {
     expiresIn: "1h", // Set the token expiration time
   });
   return token;
+};
+
+userSchema.methods.generatePasswordResetToken = function () {
+  // @ts-ignore
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  return resetToken;
 };
 
 // Create the User model

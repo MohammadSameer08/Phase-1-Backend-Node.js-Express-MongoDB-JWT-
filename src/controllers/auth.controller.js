@@ -125,3 +125,73 @@ export const deleteMe = async (req, res) => {
     res.status(500).json({ message: "Error deleting user", error });
   }
 };
+
+// @ts-ignore
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    // @ts-ignore
+    const resetToken = user.generatePasswordResetToken();
+    if (!resetToken) {
+      return res
+        .status(500)
+        .json({ message: "Failed to generate reset token" });
+    }
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = new Date(Date.now() + 3600000); // Token expires in 1 hour
+    await user.save();
+    // Send the reset token to the user's email (you can implement email sending logic here)
+    // localhost:3000/api/auth/reset-password/${resetToken} is the URL where the user can reset their password
+    console.log(
+      `Reset link: http://localhost:3000/api/auth/reset-password/${resetToken}`,
+    );
+    res.status(200).json({
+      message: "Password reset token generated successfully",
+      resetToken,
+    });
+  } catch (error) {
+    // @ts-ignore
+    console.error("Error in forgot password:", error.message || error);
+    res.status(500).json({
+      message: "Error in forgot password",
+      // @ts-ignore
+      error: error.message || "Unknown error",
+    });
+  }
+};
+
+// @ts-ignore
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+  try {
+    const user = await User.findOne({ passwordResetToken: token });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "Invalid or expired reset token" });
+    }
+    // Check if the token has expired
+    if (
+      user.passwordResetExpires &&
+      user.passwordResetExpires.getTime() < Date.now()
+    ) {
+      return res.status(400).json({ message: "Reset token has expired" });
+    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    // Clear the reset token and expiration
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+    res.status(200).json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("Error in reset password:", error);
+    res.status(500).json({ message: "Error in reset password", error });
+  }
+};

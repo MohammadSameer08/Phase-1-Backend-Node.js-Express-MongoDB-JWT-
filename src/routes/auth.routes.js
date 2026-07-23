@@ -9,6 +9,7 @@ import {
   deleteMe,
   forgotPassword,
   resetPassword,
+  refreshTokens,
 } from "../controllers/auth.controller.js";
 import { authenticateUser } from "../middleware/auth.middleware.js";
 
@@ -31,4 +32,6 @@ router.route("/profile").patch(authenticateUser, updateProfile);
 router.route("/forgot-password").post(forgotPassword);
 router.route("/reset-password/:token").post(resetPassword);
 
+// Refresh token route
+router.route("/refresh-token").post(refreshTokens);
 export default router;

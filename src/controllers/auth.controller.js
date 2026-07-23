@@ -10,6 +10,9 @@ export const registerUser = async (req, res) => {
     const user = new User({ username, email, password: hashedPassword }); // role defaults to "employee"
     // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
+    // @ts-ignore
+    const refreshToken = await user.generateRefreshToken(); // Generate refresh token
+    user.refreshToken = refreshToken;
     await user.save();
     res
       .status(201)
@@ -35,6 +38,10 @@ export const loginUser = async (req, res) => {
     }
     // @ts-ignore
     const accessToken = await user.generateAccessToken(); // Generate JWT token
+    // @ts-ignore
+    const refreshToken = await user.generateRefreshToken(); // Generate refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
     res
       .status(200)
       .cookie("token", accessToken, { httpOnly: true })
@@ -193,5 +200,33 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error("Error in reset password:", error);
     res.status(500).json({ message: "Error in reset password", error });
+  }
+};
+
+// @ts-ignore
+export const refreshTokens = async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+  try {
+    const user = await User.findOne({ refreshToken });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+    // @ts-ignore
+    const newAccessToken = await user.generateAccessToken();
+    // @ts-ignore
+    const newRefreshToken = await user.generateRefreshToken();
+    user.refreshToken = newRefreshToken;
+    await user.save();
+    res.status(200).cookie("token", newAccessToken, { httpOnly: true }).json({
+      message: "Tokens refreshed successfully",
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    });
+  } catch (error) {
+    console.error("Error refreshing tokens:", error);
+    res.status(500).json({ message: "Error refreshing tokens", error });
   }
 };

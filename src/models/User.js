@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    refreshToken: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true },
 );
@@ -48,6 +52,13 @@ userSchema.methods.generateAccessToken = function () {
     expiresIn: "1h", // Set the token expiration time
   });
   return token;
+};
+
+userSchema.methods.generateRefreshToken = function () {
+  const refreshToken = jwt.sign({ id: this._id }, process.env.JWT_SECRET || "", {
+    expiresIn: "7d", // Refresh token valid for 7 days
+  });
+  return refreshToken;
 };
 
 userSchema.methods.generatePasswordResetToken = function () {

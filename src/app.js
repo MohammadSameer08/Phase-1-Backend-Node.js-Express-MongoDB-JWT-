@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import hpp from "hpp";
 
 // Create an instance of the Express application
 const app = express();
@@ -19,6 +23,29 @@ app.use("/uploads", express.static("uploads"));
 
 // Middleware to parse incoming JSON requests
 app.use(express.json());
+
+// Middleware to set various HTTP headers for security
+app.use(helmet());
+
+// Rate limiting middleware to limit the number of requests from a single IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: {
+    message: "Too many requests. Please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all requests
+app.use(authLimiter);
+
+// Middleware to sanitize user input and prevent NoSQL injection
+app.use(mongoSanitize());
+
+// Middleware to prevent HTTP Parameter Pollution attacks
+app.use(hpp());
 
 // Define a simple route for testing
 app.get("/", (req, res) => {
